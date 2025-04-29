@@ -1,5 +1,6 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,35 +43,18 @@ public class CategoryServiceImpl implements CategoryService{
 
         Optional<Category> category = categoryRepository.findById(categoryId);
 
-        Category existingCategory = category.orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"Resouce Not Found"));
+        Category existingCategory = category.orElseThrow(()-> new ResourceNotFoundException("Category","CategoryId",categoryId));
 
         categoryRepository.delete(existingCategory);
 
         return "Category has been deleted";
-
-
-//        List<Category> categories = categoryRepository.findAll();
-//
-//        Category category = categories.stream()
-//                .filter(c-> c.getCategoryId().equals(categoryId))
-//                .findFirst().orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"Resource Not Found"));
-//
-//        if(category == null){
-//            return "category not found";
-//        }
-//
-//        //categories.remove(category);
-//        categoryRepository.delete(category);
-//
-//        return "Category with categoryId:" + categoryId + "has been deleted";
     }
 
     @Override
     public Category updateCategory(Category category,Long categoryId) {
-
-        Optional<Category> existingCategory = categoryRepository.findById(categoryId);
-
-        Category savedCategory = existingCategory.orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND,"Resource Not Found"));
+        Category savedCategory = categoryRepository.
+                findById(categoryId).orElseThrow(()->
+                        new ResourceNotFoundException("Category","CategoryId",categoryId));
 
         category.setCategoryId(categoryId);
         savedCategory = categoryRepository.save(category);
