@@ -1,5 +1,6 @@
 package com.ecommerce.project.Controller;
 
+import com.ecommerce.project.exception.APIException;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.service.CategoryService;
 import jakarta.validation.Valid;
@@ -39,29 +40,15 @@ public class CateogoryController {
 
   @DeleteMapping("/admin/categories/{categoryId}")
   public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId){
-      try {
           String status = categoryService.deleteCategory(categoryId);
-          //return new ResponseEntity<>(status, HttpStatus.OK);
-          //return ResponseEntity.status(HttpStatus.OK).body(status);
-          return ResponseEntity.ok(status);
-
-      } catch (ResponseStatusException e) {
-          return new ResponseEntity<>(e.getReason(),e.getStatusCode());
-      }
+          return new ResponseEntity<>(status, HttpStatus.OK);
   }
 
   @PatchMapping("/admin/categories/{categoryId}")
-  public ResponseEntity<String> updateCategory(@RequestBody Category category,
+  public ResponseEntity<String> updateCategory(@Valid @RequestBody Category category,
                                                @PathVariable Long categoryId){
-      try {
-          Category updateCategory = categoryService.updateCategory(category,categoryId);
-          return new ResponseEntity<>("Udated Successfully", HttpStatus.OK);
-
-      } catch (ResponseStatusException e) {
-          return new ResponseEntity<>(e.getReason(),e.getStatusCode());
-      }
+        Category updateCategory = categoryService.updateCategory(category,categoryId);
+          return new ResponseEntity<>("Updated Successfully", HttpStatus.OK);
   }
-
-
 
 }
