@@ -22,15 +22,13 @@ public class CateogoryController {
 
     @Autowired
     private CategoryService categoryService;
-//
-//    public CateogoryController(CategoryService categoryService) {
-//        this.categoryService = categoryService;
-//    }
 
-  //@GetMapping("/api/public/categories")
   @RequestMapping(value = "/public/categories",method = RequestMethod.GET)
-  public ResponseEntity<CategoryResponse> getAllCategories(){
-      CategoryResponse categoryResponse = categoryService.getAllCategories();
+  public ResponseEntity<CategoryResponse> getAllCategories(
+          @RequestParam(name = "pageNumber") Integer pageNumber,
+          @RequestParam(name = "pageSize") Integer pageSize
+  ){
+      CategoryResponse categoryResponse = categoryService.getAllCategories(pageNumber,pageSize);
       return new ResponseEntity<>(categoryResponse,HttpStatus.OK);
   }
 
@@ -41,16 +39,16 @@ public class CateogoryController {
   }
 
   @DeleteMapping("/admin/categories/{categoryId}")
-  public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId){
-          String status = categoryService.deleteCategory(categoryId);
-          return new ResponseEntity<>(status, HttpStatus.OK);
+  public ResponseEntity<CategoryDTO> deleteCategory(@PathVariable Long categoryId){
+          CategoryDTO deletedCategory = categoryService.deleteCategory(categoryId);
+          return new ResponseEntity<>(deletedCategory, HttpStatus.OK);
   }
 
   @PatchMapping("/admin/categories/{categoryId}")
-  public ResponseEntity<String> updateCategory(@Valid @RequestBody Category category,
+  public ResponseEntity<CategoryDTO> updateCategory(@Valid @RequestBody CategoryDTO categoryDTO,
                                                @PathVariable Long categoryId){
-        Category updateCategory = categoryService.updateCategory(category,categoryId);
-          return new ResponseEntity<>("Updated Successfully", HttpStatus.OK);
+          CategoryDTO updateCategory = categoryService.updateCategory(categoryDTO,categoryId);
+          return new ResponseEntity<>(updateCategory, HttpStatus.OK);
   }
 
 }

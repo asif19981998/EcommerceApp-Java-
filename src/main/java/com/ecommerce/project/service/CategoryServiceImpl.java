@@ -8,10 +8,14 @@ import com.ecommerce.project.payload.CategoryResponse;
 import com.ecommerce.project.repositories.CategoryRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.awt.print.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +33,12 @@ public class CategoryServiceImpl implements CategoryService{
     private ModelMapper modelMapper;
 
     @Override
-    public CategoryResponse getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
+    public CategoryResponse getAllCategories(Integer pageNumber,Integer pageSize) {
+
+        PageRequest pageDetails = PageRequest.of(pageNumber,pageSize);
+        Page<Category> categoryPage = categoryRepository.findAll(pageDetails);
+        List<Category> categories = categoryPage.getContent();
+
         if(categories.isEmpty())
             throw new APIException("No category exist !!");
 
@@ -42,6 +50,11 @@ public class CategoryServiceImpl implements CategoryService{
 
         CategoryResponse categoryResponse = new CategoryResponse();
         categoryResponse.setContent(categoryDTOS);
+        categoryResponse.setPageNumber(categoryPage.getNumber());
+        categoryResponse.setPageSize(categoryPage.getSize());
+        categoryResponse.setTotalPages(categoryPage.getSize());
+        categoryResponse.setTotalElements(categoryPage.getTotalElements());
+        categoryResponse.setLastPage(categoryPage.isLast());
 
         return categoryResponse;
 
@@ -59,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
-    public String deleteCategory(Long categoryId) {
+    public CategoryDTO deleteCategory(Long categoryId) {
 
         Optional<Category> category = categoryRepository.findById(categoryId);
 
@@ -67,18 +80,18 @@ public class CategoryServiceImpl implements CategoryService{
 
         categoryRepository.delete(existingCategory);
 
-        return "Category has been deleted";
+        return modelMapper.map(existingCategory,CategoryDTO.class);
     }
 
     @Override
-    public Category updateCategory(Category category,Long categoryId) {
+    public CategoryDTO updateCategory(CategoryDTO categoryDTO,Long categoryId) {
         Category savedCategory = categoryRepository.
                 findById(categoryId).orElseThrow(()->
                         new ResourceNotFoundException("Category","CategoryId",categoryId));
 
-        category.setCategoryId(categoryId);
-        savedCategory = categoryRepository.save(category);
+        categoryDTO.setCategoryId(categoryId);
+        savedCategory = categoryRepository.save(modelMapper.map(categoryDTO,Category.class));
 
-        return  savedCategory;
+        return  categoryDTO;
     }
 }
