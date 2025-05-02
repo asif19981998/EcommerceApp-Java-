@@ -1,5 +1,6 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.exception.APIException;
 import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
@@ -10,9 +11,16 @@ import com.ecommerce.project.repositories.CategoryRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -23,14 +31,36 @@ public class ProductServiceImpl implements ProductService {
     private CategoryRepository categoryRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private FileService fileService;
+
+    @Value("${project.image}")
+    private String path;
 
     @Override
-    public ProductDTO addProduct(Long categoryId, Product product) {
+    public ProductDTO addProduct(Long categoryId, ProductDTO productDTO) {
+
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(()->
                         new ResourceNotFoundException("Category","CategoryId",categoryId));
 
-        product.setImage("default.pnd");
+        boolean isProductNotPresent = true;
+
+        List<Product> products = category.getProducts();
+
+        for (Product value : products) {
+            if (value.getProductName().equals(productDTO.getProductName())) {
+                isProductNotPresent = false;
+                break;
+            }
+        }
+
+        if (!isProductNotPresent)
+            throw new APIException("Product already exist");
+
+        Product product = modelMapper.map(productDTO,Product.class);
+
+        product.setImage("default.png");
         product.setCategory(category);
         double specialPrice = product.getPrice() -
                 ((product.getDiscount() * 0.01) * product.getPrice());
@@ -42,9 +72,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse getAllProducts() {
         List<Product> products = productRepository.findAll();
+
+        if(products.isEmpty()){
+            throw new APIException("No Product Exist");
+        }
+
         List<ProductDTO> productDTOS = products.stream()
                 .map(product -> modelMapper.map(product,ProductDTO.class))
                 .toList();
+
         return new ProductResponse(productDTOS);
     }
 
@@ -73,9 +109,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDTO updateProduct(Long productId, Product product) {
+    public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
         Product productFromDb = productRepository.findById(productId)
                 .orElseThrow(()-> new ResourceNotFoundException("Product","ProductId",productId));
+
+        Product product = modelMapper.map(productDTO,Product.class);
 
         productFromDb.setProductName(product.getProductName());
         productFromDb.setDescription(product.getDescription());
@@ -86,7 +124,6 @@ public class ProductServiceImpl implements ProductService {
 
         Product updatedProduct = productRepository.save(productFromDb);
         return modelMapper.map(updatedProduct,ProductDTO.class);
-
     }
 
     @Override
@@ -97,5 +134,20 @@ public class ProductServiceImpl implements ProductService {
         productRepository.delete(productFromDb);
 
         return modelMapper.map(productFromDb,ProductDTO.class);
+    }
+
+    @Override
+    public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
+        Product productFromDb = productRepository.findById(productId)
+                .orElseThrow(()-> new ResourceNotFoundException("Product","ProductId",productId));
+
+       String fileName = fileService.uploadImage(path,image);
+
+        productFromDb.setImage(fileName);
+
+        Product updatedProduct = productRepository.save(productFromDb);
+
+        return modelMapper.map(updatedProduct,ProductDTO.class);
+
     }
 }

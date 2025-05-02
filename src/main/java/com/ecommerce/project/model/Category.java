@@ -22,6 +22,6 @@ public class Category {
     @NotBlank(message = "Category is required")
     private String categoryName;
 
-//    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
-//    private List<Product> products;
+    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
+    private List<Product> products;
 }
