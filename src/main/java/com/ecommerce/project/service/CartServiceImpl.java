@@ -151,13 +151,13 @@ public class CartServiceImpl implements CartService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
-        if (product.getQuantity() == 0) {
+        if(product.getQuantity() == 0){
             throw new APIException(product.getProductName() + " is not available");
         }
-            if (product.getQuantity() < quantity) {
+        if (product.getQuantity() < quantity){
                 throw new APIException("Please, make an order of the " + product.getProductName()
                         + " less than or equal to the quantity " + product.getQuantity() + ".");
-            }
+        }
 
             CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(productId, cartId);
 
@@ -181,6 +181,7 @@ public class CartServiceImpl implements CartService{
                 prd.setQuantity(item.getQuantity());
                 return prd;
             });
+
 
             cartDTO.setProducts(productDTOStream.toList());
 
